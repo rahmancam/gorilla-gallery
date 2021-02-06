@@ -3,13 +3,24 @@ package main
 import (
 	"fmt"
 	"net/http"
+
+	"github.com/gorilla/mux"
 )
 
-func handle(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "<h1>Go Gallery v2</h1>")
+func contact(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html")
+	fmt.Fprint(w, `Please contact us @ 
+	<a href="mailto:helpdesk@gorilla-gallery.com">mailto:helpdesk@gorilla-gallery.com<a>`)
+}
+
+func index(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html")
+	fmt.Fprint(w, `<h1>Gorilla Gallery</h1>`)
 }
 
 func main() {
-	http.HandleFunc("/", handle)
-	http.ListenAndServe(":8080", nil)
+	router := mux.NewRouter()
+	router.HandleFunc("/", index)
+	router.HandleFunc("/contact", contact)
+	http.ListenAndServe(":8080", router)
 }
