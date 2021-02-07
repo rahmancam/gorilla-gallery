@@ -30,6 +30,7 @@ func init() {
 	tpls["contact"] = getTemplate("templates/contact.gohtml")
 	tpls["home"] = getTemplate("templates/home.gohtml")
 	tpls["faq"] = getTemplate("templates/faq.gohtml")
+	tpls["signup"] = getTemplate("templates/signup.gohtml")
 	tpls["404"] = getTemplate("templates/404.gohtml")
 
 }
@@ -58,6 +59,10 @@ func faq(w http.ResponseWriter, r *http.Request) {
 	render("faq", w, nil)
 }
 
+func signup(w http.ResponseWriter, r *http.Request) {
+	render("signup", w, nil)
+}
+
 func pageNotFound(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotFound)
 	render("404", w, nil)
@@ -69,5 +74,6 @@ func main() {
 	router.HandleFunc("/", home)
 	router.HandleFunc("/contact", contact)
 	router.HandleFunc("/faq", faq)
+	router.HandleFunc("/signup", signup)
 	http.ListenAndServe(":8080", router)
 }
