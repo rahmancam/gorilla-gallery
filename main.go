@@ -10,7 +10,10 @@ import (
 var tpls map[string]*template.Template
 
 func getTemplate(templ ...string) *template.Template {
-	templs := []string{"templates/index.gohtml", "templates/layouts/base.gohtml", "templates/layouts/footer.gohtml"}
+	templs := []string{"templates/index.gohtml",
+		"templates/layouts/base.gohtml",
+		"templates/layouts/navbar.gohtml",
+		"templates/layouts/footer.gohtml"}
 	templs = append(templs, templ...)
 	return template.Must(template.ParseFiles(templs...))
 }
