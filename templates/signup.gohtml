@@ -1,15 +1,26 @@
 {{define "title"}}Go Gorilla - Signup{{end}}
 {{define "main"}}
-<form method="POST" action="/signup">
-  <div class="mb-3">
-    <label for="email" class="form-label">Email address</label>
-    <input type="email" name="email" class="form-control" id="email" aria-describedby="emailHelp">
-    <div id="emailHelp" class="form-text">We'll never share your email with anyone else.</div>
-  </div>
-  <div class="mb-3">
-    <label for="password" class="form-label">Password</label>
-    <input type="password" name="password" class="form-control" id="password">
-  </div>
-  <button type="submit" class="btn btn-primary">Sign Up</button>
-</form>
+<style>
+.form-signup {
+  width: 100%;
+  max-width: 330px;
+  padding: 15px;
+  margin: auto;
+}
+</style>
+<div class="form-signup">
+    <h1 class="h3 mb-3 fw-normal">Please sign up</h1>
+    <form method="POST" action="/signup">
+    <div class="mb-3">
+        <label for="email" class="form-label">Email address</label>
+        <input type="email" name="email" class="form-control" id="email" aria-describedby="emailHelp">
+        <div id="emailHelp" class="form-text">We'll never share your email with anyone else.</div>
+    </div>
+    <div class="mb-3">
+        <label for="password" class="form-label">Password</label>
+        <input type="password" name="password" class="form-control" id="password">
+    </div>
+    <button type="submit" class="btn btn-primary">Sign Up</button>
+    </form>
+</div>
 {{end}}
