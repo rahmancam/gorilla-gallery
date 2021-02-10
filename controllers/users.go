@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/gorilla/schema"
+	"github.com/rahmancam/gorilla-gallery/helpers"
 )
 
 // User type
@@ -21,18 +21,11 @@ type SignupForm struct {
 	Password string `json:"password"`
 }
 
-var decoder = schema.NewDecoder()
-
 // Create new user on signup
 func (u *User) Create(w http.ResponseWriter, r *http.Request) {
-	if err := r.ParseForm(); err != nil {
-		panic(err)
-	}
-
 	var formData SignupForm
-	if err := decoder.Decode(&formData, r.PostForm); err != nil {
+	if err := helpers.ParseForm(r, &formData); err != nil {
 		panic(err)
 	}
-
 	fmt.Fprintln(w, formData.Email, formData.Password)
 }
