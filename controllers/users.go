@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/rahmancam/gorilla-gallery/helpers"
-)
+) 
 
 // User type
 type User struct{}
