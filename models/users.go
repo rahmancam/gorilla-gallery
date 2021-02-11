@@ -22,7 +22,7 @@ type UserService struct {
 type User struct {
 	gorm.Model
 	Name  string
-	Email string `gorm:"not null;unique_index"`
+	Email string `gorm:"not null;uniqueIndex"`
 }
 
 // NewUserService contructor to create new user service
@@ -80,8 +80,17 @@ func (us *UserService) Delete(id uint) error {
 }
 
 // ResetTables create and migrate
-func (us *UserService) ResetTables() {
-	us.db.Migrator().DropTable(&User{})
-	us.db.Create(&User{})
-	us.db.AutoMigrate(&User{})
+func (us *UserService) ResetTables() error {
+	if err := us.db.Migrator().DropTable(&User{}); err != nil {
+		return err
+	}
+	return us.AutoMigrate()
+}
+
+// AutoMigrate migrate the table automatically
+func (us *UserService) AutoMigrate() error {
+	if err := us.db.AutoMigrate(&User{}); err != nil {
+		return err
+	}
+	return nil
 }
