@@ -9,7 +9,8 @@ import (
 
 var (
 	// ErrNotFound defines error when the resource not found
-	ErrNotFound = errors.New("user: resource not found")
+	ErrNotFound  = errors.New("user: resource not found")
+	ErrInvalidID = errors.New("user: ID provided is Invalid")
 )
 
 // UserService type
@@ -38,20 +39,44 @@ func NewUserService(connString string) (*UserService, error) {
 // ByID queries and retuns user by Id
 func (us UserService) ByID(id uint) (*User, error) {
 	var u User
-	err := us.db.Where("id = ?", id).First(&u).Error
-	switch err {
-	case nil:
-		return &u, nil
-	case gorm.ErrRecordNotFound:
-		return nil, ErrNotFound
-	default:
-		return nil, err
+	db := us.db.Where("id = ?", id)
+	err := first(db, &u)
+	return &u, err
+}
+
+// ByEmail queries and returns user by email
+func (us UserService) ByEmail(email string) (*User, error) {
+	var u User
+	db := us.db.Where("email = ?", email)
+	err := first(db, &u)
+	return &u, err
+}
+
+func first(db *gorm.DB, u *User) error {
+	err := db.First(&u).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return ErrNotFound
 	}
+	return err
 }
 
 // Create will create the given user
 func (us *UserService) Create(user *User) error {
 	return us.db.Create(user).Error
+}
+
+// Update will update given user info
+func (us *UserService) Update(user *User) error {
+	return us.db.Save(user).Error
+}
+
+// Delete will delete the given user
+func (us *UserService) Delete(id uint) error {
+	if id == 0 {
+		return ErrInvalidID
+	}
+	u := User{Model: gorm.Model{ID: id}}
+	return us.db.Delete(&u).Error
 }
 
 // ResetTables create and migrate
