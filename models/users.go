@@ -3,13 +3,15 @@ package models
 import (
 	"errors"
 
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 var (
 	// ErrNotFound defines error when the resource not found
-	ErrNotFound  = errors.New("user: resource not found")
+	ErrNotFound = errors.New("user: resource not found")
+	// ErrInvalidID defines error of invalid user id
 	ErrInvalidID = errors.New("user: ID provided is Invalid")
 )
 
@@ -21,8 +23,10 @@ type UserService struct {
 // User type
 type User struct {
 	gorm.Model
-	Name  string
-	Email string `gorm:"not null;uniqueIndex"`
+	Name         string
+	Email        string `gorm:"not null;uniqueIndex"`
+	Password     string `gorm:"-"`
+	PasswordHash string `gorm:"not null"`
 }
 
 // NewUserService contructor to create new user service
@@ -62,6 +66,12 @@ func first(db *gorm.DB, u *User) error {
 
 // Create will create the given user
 func (us *UserService) Create(user *User) error {
+	hashedBytes, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	user.PasswordHash = string(hashedBytes)
+	user.Password = ""
 	return us.db.Create(user).Error
 }
 

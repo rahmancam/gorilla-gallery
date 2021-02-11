@@ -34,8 +34,9 @@ func (u *Users) Create(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 	usr := models.User{
-		Name:  formData.Name,
-		Email: formData.Email,
+		Name:     formData.Name,
+		Email:    formData.Email,
+		Password: formData.Password,
 	}
 
 	if err := u.us.Create(&usr); err != nil {
