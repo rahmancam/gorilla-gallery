@@ -22,8 +22,14 @@ var (
 const passwordPepper = "BCTX&^591"
 const hashSecretKey = "XVBTING^&#36893BFD"
 
-// UserService type
-type UserService struct {
+// UserService is a set of methods to query and alter user model
+type UserService interface {
+	Authenticate(email, password string) (*User, error)
+	UserDB
+}
+
+// userService type
+type userService struct {
 	UserDB
 }
 
@@ -65,13 +71,13 @@ type UserDB interface {
 }
 
 // NewUserService contructor to create new user service
-func NewUserService(connString string) (*UserService, error) {
+func NewUserService(connString string) (UserService, error) {
 	ug, err := newUserGorm(connString)
 	if err != nil {
 		return nil, err
 	}
 	uVal := &UserValidator{ug}
-	return &UserService{
+	return &userService{
 		uVal,
 	}, nil
 }
@@ -131,7 +137,7 @@ func first(db *gorm.DB, u *User) error {
 }
 
 // Authenticate used to authenticate user
-func (us *UserService) Authenticate(email, password string) (*User, error) {
+func (us *userService) Authenticate(email, password string) (*User, error) {
 	user, err := us.ByEmail(email)
 	if err != nil {
 		return nil, err

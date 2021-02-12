@@ -30,7 +30,7 @@ func AppRouter() *mux.Router {
 	return router
 }
 
-func getUserService() *models.UserService {
+func getUserService() models.UserService {
 	us, err := models.NewUserService(getConnectionString())
 	if err != nil {
 		panic(err)

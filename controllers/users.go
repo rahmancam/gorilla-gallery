@@ -11,11 +11,11 @@ import (
 
 // Users type
 type Users struct {
-	us *models.UserService
+	us models.UserService
 }
 
 // NewUserController constructor
-func NewUserController(us *models.UserService) *Users {
+func NewUserController(us models.UserService) *Users {
 	return &Users{
 		us: us,
 	}
