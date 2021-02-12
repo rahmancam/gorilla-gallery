@@ -6,6 +6,7 @@ import (
 
 	"github.com/rahmancam/gorilla-gallery/helpers"
 	"github.com/rahmancam/gorilla-gallery/models"
+	"github.com/rahmancam/gorilla-gallery/rand"
 )
 
 // Users type
@@ -49,7 +50,11 @@ func (u *Users) Create(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	signIn(w, &usr)
+	err := u.signIn(w, &usr)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	http.Redirect(w, r, "/cookietest", http.StatusFound)
 }
 
@@ -73,25 +78,46 @@ func (u *Users) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	signIn(w, user)
-	http.Redirect(w, r, "/cookietest", http.StatusFound)
-}
-
-func signIn(w http.ResponseWriter, user *models.User) {
-	cookie := http.Cookie{
-		Name:   "email",
-		Value:  user.Email,
-		Secure: false,
-	}
-	http.SetCookie(w, &cookie)
-}
-
-// CookieTest test
-func (u *Users) CookieTest(w http.ResponseWriter, r *http.Request) {
-	cookie, err := r.Cookie("email")
+	err = u.signIn(w, user)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	fmt.Fprintln(w, "Email is: ", cookie.Value)
+	http.Redirect(w, r, "/cookietest", http.StatusFound)
+}
+
+func (u *Users) signIn(w http.ResponseWriter, user *models.User) error {
+	if user.Remember == "" {
+		token, err := rand.RememberToken()
+		if err != nil {
+			return err
+		}
+		user.Remember = token
+	}
+	err := u.us.Update(user)
+	if err != nil {
+		return err
+	}
+	cookie := http.Cookie{
+		Name:   "token",
+		Value:  user.Remember,
+		Secure: false,
+	}
+	http.SetCookie(w, &cookie)
+	return nil
+}
+
+// CookieTest test
+func (u *Users) CookieTest(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("token")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	user, err := u.us.ByRemember(cookie.Value)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	fmt.Fprintln(w, user)
 }
