@@ -99,9 +99,9 @@ func (u *Users) signIn(w http.ResponseWriter, user *models.User) error {
 		return err
 	}
 	cookie := http.Cookie{
-		Name:   "token",
-		Value:  user.Remember,
-		Secure: false,
+		Name:     "token",
+		Value:    user.Remember,
+		HttpOnly: true,
 	}
 	http.SetCookie(w, &cookie)
 	return nil
