@@ -118,18 +118,27 @@ func (uv *userValidator) ByRemember(token string) (*User, error) {
 
 // Create will create the given user
 func (uv *userValidator) Create(user *User) error {
-	if user.Remember == "" {
-		token, err := rand.RememberToken()
-		if err != nil {
-			return err
-		}
-		user.Remember = token
-	}
+	err := runUserValFuncs(user,
+		uv.bcryptPassword,
+		uv.setRememberTokenIfUnset,
+		uv.hmacRemember)
 
-	if err := runUserValFuncs(user, uv.bcryptPassword, uv.hmacRemember); err != nil {
+	if err != nil {
 		return err
 	}
 	return uv.UserDB.Create(user)
+}
+
+func (uv *userValidator) setRememberTokenIfUnset(user *User) error {
+	if user.Remember != "" {
+		return nil
+	}
+	token, err := rand.RememberToken()
+	if err != nil {
+		return err
+	}
+	user.Remember = token
+	return nil
 }
 
 type userValFunc func(*User) error
