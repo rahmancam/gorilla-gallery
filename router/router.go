@@ -21,8 +21,10 @@ func AppRouter() *mux.Router {
 	router.HandleFunc("/contact", views.Contact).Methods("GET")
 	router.HandleFunc("/faq", views.Faq).Methods("GET")
 	router.HandleFunc("/signup", views.Signup).Methods("GET")
+	router.HandleFunc("/login", views.Login).Methods("GET")
 
 	router.HandleFunc("/signup", userController.Create).Methods("POST")
+	router.HandleFunc("/login", userController.Login).Methods("POST")
 
 	return router
 }

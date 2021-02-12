@@ -14,6 +14,7 @@ func init() {
 	tpls["home"] = getTemplate("views/templates/home.gohtml")
 	tpls["faq"] = getTemplate("views/templates/faq.gohtml")
 	tpls["signup"] = getTemplate("views/templates/signup.gohtml")
+	tpls["login"] = getTemplate("views/templates/login.gohtml")
 	tpls["404"] = getTemplate("views/templates/404.gohtml")
 }
 
@@ -50,6 +51,11 @@ func Faq(w http.ResponseWriter, r *http.Request) {
 // Signup view
 func Signup(w http.ResponseWriter, r *http.Request) {
 	render("signup", w, nil)
+}
+
+// Login view
+func Login(w http.ResponseWriter, r *http.Request) {
+	render("login", w, nil)
 }
 
 // PageNotFound view

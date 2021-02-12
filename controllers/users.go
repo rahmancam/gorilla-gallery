@@ -22,9 +22,15 @@ func NewUserController(us *models.UserService) *Users {
 
 // SignupForm type holds all user signup form submit data
 type SignupForm struct {
-	Name     string `json:"name"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Name     string `schema:"name"`
+	Email    string `schema:"email"`
+	Password string `schema:"password"`
+}
+
+// LoginForm type holds all user login form submit data
+type LoginForm struct {
+	Email    string `schema:"email"`
+	Password string `schema:"password"`
 }
 
 // Create new user on signup
@@ -44,4 +50,22 @@ func (u *Users) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	fmt.Fprintln(w, formData)
+}
+
+// Login allows user to login into the system
+func (u *Users) Login(w http.ResponseWriter, r *http.Request) {
+	var formData LoginForm
+	if err := helpers.ParseForm(r, &formData); err != nil {
+		panic(err)
+	}
+	usr := models.User{
+		Email:    formData.Email,
+		Password: formData.Password,
+	}
+
+	// if err := u.us.Create(&usr); err != nil {
+	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
+	// 	return
+	// }
+	fmt.Fprintln(w, usr)
 }
