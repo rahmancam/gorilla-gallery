@@ -13,7 +13,11 @@ var (
 	ErrNotFound = errors.New("user: resource not found")
 	// ErrInvalidID defines error of invalid user id
 	ErrInvalidID = errors.New("user: ID provided is Invalid")
+	// ErrInvalidPassword defines error of invalid password
+	ErrInvalidPassword = errors.New("user: incorrect password")
 )
+
+const passwordPepper = "BCTX&^591"
 
 // UserService type
 type UserService struct {
@@ -64,7 +68,25 @@ func first(db *gorm.DB, u *User) error {
 	return err
 }
 
-const passwordPepper = "BCTX&^591"
+// Authenticate used to authenticate user
+func (us UserService) Authenticate(email, password string) (*User, error) {
+	user, err := us.ByEmail(email)
+	if err != nil {
+		return nil, err
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password+passwordPepper))
+	if err != nil {
+		switch err {
+		case bcrypt.ErrMismatchedHashAndPassword:
+			return nil, ErrInvalidPassword
+		default:
+			return nil, err
+		}
+	}
+
+	return user, nil
+}
 
 // Create will create the given user
 func (us *UserService) Create(user *User) error {
