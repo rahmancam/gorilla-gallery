@@ -85,6 +85,104 @@ func NewUserService(connString string) (UserService, error) {
 	}, nil
 }
 
+// Authenticate used to authenticate user
+func (us *userService) Authenticate(email, password string) (*User, error) {
+	user, err := us.ByEmail(email)
+	if err != nil {
+		return nil, err
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password+passwordPepper))
+	if err != nil {
+		switch err {
+		case bcrypt.ErrMismatchedHashAndPassword:
+			return nil, ErrInvalidPassword
+		default:
+			return nil, err
+		}
+	}
+
+	return user, nil
+}
+
+func (uv *userValidator) ByRemember(token string) (*User, error) {
+	user := User{
+		Remember: token,
+	}
+	if err := runUserValFuncs(&user, uv.hmacRemember); err != nil {
+		return nil, err
+	}
+
+	return uv.UserDB.ByRemember(user.RememberHash)
+}
+
+// Create will create the given user
+func (uv *userValidator) Create(user *User) error {
+	if user.Remember == "" {
+		token, err := rand.RememberToken()
+		if err != nil {
+			return err
+		}
+		user.Remember = token
+	}
+
+	if err := runUserValFuncs(user, uv.bcryptPassword, uv.hmacRemember); err != nil {
+		return err
+	}
+	return uv.UserDB.Create(user)
+}
+
+type userValFunc func(*User) error
+
+func runUserValFuncs(user *User, fns ...userValFunc) error {
+	for _, fn := range fns {
+		if err := fn(user); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (uv *userValidator) bcryptPassword(user *User) error {
+	if user.Password == "" {
+		return nil
+	}
+
+	pBytes := []byte(user.Password + passwordPepper)
+	hashedBytes, err := bcrypt.GenerateFromPassword(pBytes, bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	user.PasswordHash = string(hashedBytes)
+	user.Password = ""
+	return nil
+}
+
+func (uv *userValidator) hmacRemember(user *User) error {
+	if user.Remember == "" {
+		return nil
+	}
+
+	user.RememberHash = uv.hmac.Hash(user.Remember)
+	return nil
+}
+
+// Update will update given user info
+func (uv *userValidator) Update(user *User) error {
+	if err := runUserValFuncs(user, uv.bcryptPassword, uv.hmacRemember); err != nil {
+		return err
+	}
+	return uv.UserDB.Update(user)
+}
+
+// Delete will delete the given user
+func (uv *userValidator) Delete(id uint) error {
+	if id == 0 {
+		return ErrInvalidID
+	}
+	return uv.UserDB.Delete(id)
+}
+
 // newUserGorm contructor to create new gorm
 func newUserGorm(connString string) (*UserGorm, error) {
 	db, err := gorm.Open(postgres.Open(connString), &gorm.Config{})
@@ -135,94 +233,6 @@ func first(db *gorm.DB, u *User) error {
 		return ErrNotFound
 	}
 	return err
-}
-
-// Authenticate used to authenticate user
-func (us *userService) Authenticate(email, password string) (*User, error) {
-	user, err := us.ByEmail(email)
-	if err != nil {
-		return nil, err
-	}
-
-	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password+passwordPepper))
-	if err != nil {
-		switch err {
-		case bcrypt.ErrMismatchedHashAndPassword:
-			return nil, ErrInvalidPassword
-		default:
-			return nil, err
-		}
-	}
-
-	return user, nil
-}
-
-func (uv *userValidator) ByRemember(token string) (*User, error) {
-	tokenHash := uv.hmac.Hash(token)
-	return uv.UserDB.ByRemember(tokenHash)
-}
-
-// Create will create the given user
-func (uv *userValidator) Create(user *User) error {
-	if err := runUserValFuncs(user, uv.bcryptPassword); err != nil {
-		return err
-	}
-
-	if user.Remember == "" {
-		token, err := rand.RememberToken()
-		if err != nil {
-			return err
-		}
-		user.Remember = token
-	}
-	user.RememberHash = uv.hmac.Hash(user.Remember)
-	return uv.UserDB.Create(user)
-}
-
-type userValFunc func(*User) error
-
-func runUserValFuncs(user *User, fns ...userValFunc) error {
-	for _, fn := range fns {
-		if err := fn(user); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (uv *userValidator) bcryptPassword(user *User) error {
-	if user.Password == "" {
-		return nil
-	}
-
-	pBytes := []byte(user.Password + passwordPepper)
-	hashedBytes, err := bcrypt.GenerateFromPassword(pBytes, bcrypt.DefaultCost)
-	if err != nil {
-		return err
-	}
-	user.PasswordHash = string(hashedBytes)
-	user.Password = ""
-	return nil
-}
-
-// Update will update given user info
-func (uv *userValidator) Update(user *User) error {
-	if err := runUserValFuncs(user, uv.bcryptPassword); err != nil {
-		return err
-	}
-
-	if user.Remember != "" {
-		user.RememberHash = uv.hmac.Hash(user.Remember)
-	}
-	return uv.UserDB.Update(user)
-}
-
-// Delete will delete the given user
-func (uv *userValidator) Delete(id uint) error {
-	if id == 0 {
-		return ErrInvalidID
-	}
-	return uv.UserDB.Delete(id)
 }
 
 // Create will create the given user
