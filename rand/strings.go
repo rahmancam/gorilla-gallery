@@ -5,7 +5,7 @@ import (
 	"encoding/base64"
 )
 
-const RememberTokenBytes = 32
+const rememberTokenBytes = 32
 
 // Bytes will generate n random bytes
 func Bytes(n int) ([]byte, error) {
@@ -27,5 +27,5 @@ func String(nBytes int) (string, error) {
 
 // RememberToken generate random byte string
 func RememberToken() (string, error) {
-	return String(RememberTokenBytes)
+	return String(rememberTokenBytes)
 }
