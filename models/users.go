@@ -64,9 +64,12 @@ func first(db *gorm.DB, u *User) error {
 	return err
 }
 
+const passwordPepper = "BCTX&^591"
+
 // Create will create the given user
 func (us *UserService) Create(user *User) error {
-	hashedBytes, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	pBytes := []byte(user.Password + passwordPepper)
+	hashedBytes, err := bcrypt.GenerateFromPassword(pBytes, bcrypt.DefaultCost)
 	if err != nil {
 		return err
 	}
