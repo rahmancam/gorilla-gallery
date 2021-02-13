@@ -141,6 +141,15 @@ func (uv *userValidator) setRememberTokenIfUnset(user *User) error {
 	return nil
 }
 
+func (uv *userValidator) idGreaterThan(n uint) userValFunc {
+	return userValFunc(func(user *User) error {
+		if user.ID <= 0 {
+			return ErrInvalidID
+		}
+		return nil
+	})
+}
+
 type userValFunc func(*User) error
 
 func runUserValFuncs(user *User, fns ...userValFunc) error {
@@ -186,8 +195,10 @@ func (uv *userValidator) Update(user *User) error {
 
 // Delete will delete the given user
 func (uv *userValidator) Delete(id uint) error {
-	if id == 0 {
-		return ErrInvalidID
+	var user User
+	user.ID = id
+	if err := runUserValFuncs(&user, uv.idGreaterThan(0)); err != nil {
+		return err
 	}
 	return uv.UserDB.Delete(id)
 }
