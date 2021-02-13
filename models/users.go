@@ -140,7 +140,8 @@ func (uv *userValidator) Create(user *User) error {
 		uv.hmacRemember,
 		uv.normalizeEmail,
 		uv.requireEmail,
-		uv.validateEmail)
+		uv.validateEmail,
+		uv.emailTaken)
 
 	if err != nil {
 		return err
@@ -188,6 +189,22 @@ func (uv *userValidator) validateEmail(user *User) error {
 	return nil
 }
 
+func (uv *userValidator) emailTaken(user *User) error {
+	existing, err := uv.ByEmail(user.Email)
+	if err == ErrNotFound {
+		// email not taken
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+
+	if user.ID != existing.ID {
+		return errors.New("user: email address is already taken")
+	}
+	return nil
+}
+
 type userValFunc func(*User) error
 
 func runUserValFuncs(user *User, fns ...userValFunc) error {
@@ -228,7 +245,10 @@ func (uv *userValidator) Update(user *User) error {
 	err := runUserValFuncs(user,
 		uv.bcryptPassword,
 		uv.hmacRemember,
-		uv.normalizeEmail)
+		uv.normalizeEmail,
+		uv.requireEmail,
+		uv.validateEmail,
+		uv.emailTaken)
 	if err != nil {
 		return err
 	}
