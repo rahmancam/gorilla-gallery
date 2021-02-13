@@ -2,6 +2,8 @@ package models
 
 import (
 	"errors"
+	"regexp"
+	"strings"
 
 	"github.com/rahmancam/gorilla-gallery/hash"
 	"github.com/rahmancam/gorilla-gallery/rand"
@@ -17,6 +19,10 @@ var (
 	ErrInvalidID = errors.New("user: ID provided is Invalid")
 	// ErrInvalidPassword defines error of invalid password
 	ErrInvalidPassword = errors.New("user: incorrect password")
+)
+
+var (
+	regexEmail = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
 )
 
 const passwordPepper = "BCTX&^591"
@@ -116,12 +122,25 @@ func (uv *userValidator) ByRemember(token string) (*User, error) {
 	return uv.UserDB.ByRemember(user.RememberHash)
 }
 
+func (uv *userValidator) ByEmail(email string) (*User, error) {
+	user := User{
+		Email: email,
+	}
+	if err := runUserValFuncs(&user, uv.normalizeEmail); err != nil {
+		return nil, err
+	}
+	return uv.UserDB.ByEmail(user.Email)
+}
+
 // Create will create the given user
 func (uv *userValidator) Create(user *User) error {
 	err := runUserValFuncs(user,
 		uv.bcryptPassword,
 		uv.setRememberTokenIfUnset,
-		uv.hmacRemember)
+		uv.hmacRemember,
+		uv.normalizeEmail,
+		uv.requireEmail,
+		uv.validateEmail)
 
 	if err != nil {
 		return err
@@ -148,6 +167,25 @@ func (uv *userValidator) idGreaterThan(n uint) userValFunc {
 		}
 		return nil
 	})
+}
+
+func (uv *userValidator) normalizeEmail(user *User) error {
+	user.Email = strings.ToLower(strings.TrimSpace(user.Email))
+	return nil
+}
+
+func (uv *userValidator) requireEmail(user *User) error {
+	if user.Email == "" {
+		return errors.New("Email address is required")
+	}
+	return nil
+}
+
+func (uv *userValidator) validateEmail(user *User) error {
+	if !regexEmail.MatchString(user.Email) {
+		return errors.New("Email address is not valid : " + user.Email)
+	}
+	return nil
 }
 
 type userValFunc func(*User) error
@@ -187,7 +225,11 @@ func (uv *userValidator) hmacRemember(user *User) error {
 
 // Update will update given user info
 func (uv *userValidator) Update(user *User) error {
-	if err := runUserValFuncs(user, uv.bcryptPassword, uv.hmacRemember); err != nil {
+	err := runUserValFuncs(user,
+		uv.bcryptPassword,
+		uv.hmacRemember,
+		uv.normalizeEmail)
+	if err != nil {
 		return err
 	}
 	return uv.UserDB.Update(user)
